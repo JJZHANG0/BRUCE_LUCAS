@@ -1,0 +1,1187 @@
+openapi: 3.0.3
+info:
+  title: Blend Lumina 艺术品交易网站 API
+  description: 完整的艺术品交易、用户管理、内容管理等功能API
+  version: 1.0.0
+  contact:
+    name: Blend Lumina Team
+    email: admin@blendlumina.com
+servers:
+  - url: http://localhost:8000/api
+    description: 开发环境
+  - url: https://api.blendlumina.com/api
+    description: 生产环境
+
+components:
+  securitySchemes:
+    sessionAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    tokenAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 用户ID
+        username:
+          type: string
+          description: 用户名
+        email:
+          type: string
+          format: email
+          description: 邮箱
+        first_name:
+          type: string
+          description: 名
+        last_name:
+          type: string
+          description: 姓
+        user_type:
+          type: string
+          enum: [buyer, artist, merchant]
+          description: 用户类型
+        phone:
+          type: string
+          description: 手机号
+        wechat:
+          type: string
+          description: 微信号
+        avatar:
+          type: string
+          format: uri
+          description: 头像URL
+        is_verified:
+          type: boolean
+          description: 是否认证
+        created_at:
+          type: string
+          format: date-time
+          description: 创建时间
+      required:
+        - username
+        - email
+        - user_type
+    
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        parent:
+          $ref: '#/components/schemas/Category'
+        description:
+          type: string
+        image:
+          type: string
+          format: uri
+        sort_order:
+          type: integer
+        is_active:
+          type: boolean
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/Category'
+    
+    Product:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: decimal
+        original_price:
+          type: number
+          format: decimal
+        category:
+          $ref: '#/components/schemas/Category'
+        size:
+          type: string
+        weight:
+          type: number
+        materials:
+          type: array
+          items:
+            type: string
+        techniques:
+          type: array
+          items:
+            type: string
+        year_created:
+          type: integer
+        is_original:
+          type: boolean
+        is_limited:
+          type: boolean
+        status:
+          type: string
+          enum: [draft, published, sold, archived]
+        views_count:
+          type: integer
+        likes_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+    
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        product:
+          type: integer
+        product_title:
+          type: string
+        product_price:
+          type: number
+          format: decimal
+        product_image:
+          type: string
+          format: uri
+        quantity:
+          type: integer
+        total_price:
+          type: number
+          format: decimal
+        added_at:
+          type: string
+          format: date-time
+    
+    Order:
+      type: object
+      properties:
+        id:
+          type: integer
+        order_number:
+          type: string
+        status:
+          type: string
+          enum: [pending_payment, paid, processing, shipped, delivered, completed, cancelled, refunded]
+        total_amount:
+          type: number
+          format: decimal
+        final_amount:
+          type: number
+          format: decimal
+        shipping_address:
+          type: object
+        contact_phone:
+          type: string
+        contact_name:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    
+    News:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        content:
+          type: string
+        summary:
+          type: string
+        cover_image:
+          type: string
+          format: uri
+        news_type:
+          type: string
+          enum: [art_news, exhibition, culture, industry]
+        author:
+          type: string
+        source:
+          type: string
+        is_featured:
+          type: boolean
+        views_count:
+          type: integer
+        published_at:
+          type: string
+          format: date-time
+    
+    Article:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+          maxLength: 20
+        content:
+          type: string
+          maxLength: 1200
+        cover_image:
+          type: string
+          format: uri
+        author:
+          $ref: '#/components/schemas/User'
+        is_approved:
+          type: boolean
+        is_featured:
+          type: boolean
+        views_count:
+          type: integer
+        likes_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+
+paths:
+  /users/register/:
+    post:
+      tags:
+        - 用户管理
+      summary: 用户注册
+      description: 创建新用户账号
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - email
+                - password
+                - user_type
+              properties:
+                username:
+                  type: string
+                  minLength: 3
+                  maxLength: 150
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  minLength: 8
+                first_name:
+                  type: string
+                last_name:
+                  type: string
+                user_type:
+                  type: string
+                  enum: [buyer, artist, merchant]
+                phone:
+                  type: string
+      responses:
+        '201':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: 请求参数错误
+  
+  /users/login/:
+    post:
+      tags:
+        - 用户管理
+      summary: 用户登录
+      description: 用户登录获取认证
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - username
+                - password
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: 用户名或密码错误
+  
+  /users/logout/:
+    post:
+      tags:
+        - 用户管理
+      summary: 用户退出
+      description: 退出登录
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 退出成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+  
+  /users/profile/:
+    get:
+      tags:
+        - 用户管理
+      summary: 获取用户信息
+      description: 获取当前登录用户信息
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          description: 未认证
+  
+  /categories/:
+    get:
+      tags:
+        - 商品分类
+      summary: 获取商品分类
+      description: 获取所有商品分类列表
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+  
+  /categories/root_categories/:
+    get:
+      tags:
+        - 商品分类
+      summary: 获取根分类
+      description: 获取所有根分类（无父分类的分类）
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Category'
+  
+  /products/:
+    get:
+      tags:
+        - 商品管理
+      summary: 获取商品列表
+      description: 获取商品列表，支持分页、搜索、过滤
+      parameters:
+        - name: search
+          in: query
+          description: 搜索关键词
+          schema:
+            type: string
+        - name: category
+          in: query
+          description: 分类ID
+          schema:
+            type: integer
+        - name: artist
+          in: query
+          description: 艺术家ID
+          schema:
+            type: integer
+        - name: ordering
+          in: query
+          description: 排序方式
+          schema:
+            type: string
+            enum: [price, -price, created_at, -created_at, views_count, -views_count, likes_count, -likes_count]
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+  
+  /products/{id}/:
+    get:
+      tags:
+        - 商品管理
+      summary: 获取商品详情
+      description: 根据ID获取商品详细信息
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 商品ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: 商品不存在
+  
+  /products/featured/:
+    get:
+      tags:
+        - 商品管理
+      summary: 获取推荐商品
+      description: 获取推荐商品列表
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+  
+  /cart/:
+    get:
+      tags:
+        - 购物车
+      summary: 获取购物车
+      description: 获取当前用户的购物车商品
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+        '401':
+          description: 未认证
+  
+  /cart/add_to_cart/:
+    post:
+      tags:
+        - 购物车
+      summary: 添加到购物车
+      description: 将商品添加到购物车
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+              properties:
+                product_id:
+                  type: integer
+                  description: 商品ID
+                quantity:
+                  type: integer
+                  default: 1
+                  minimum: 1
+                  description: 数量
+      responses:
+        '200':
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+        '400':
+          description: 请求参数错误
+        '401':
+          description: 未认证
+  
+  /cart/{id}/update_quantity/:
+    post:
+      tags:
+        - 购物车
+      summary: 更新购物车商品数量
+      description: 更新购物车中商品的数量
+      security:
+        - sessionAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: 购物车项ID
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - quantity
+              properties:
+                quantity:
+                  type: integer
+                  minimum: 0
+                  description: 新数量（0表示删除）
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+        '400':
+          description: 请求参数错误
+        '401':
+          description: 未认证
+        '404':
+          description: 购物车项不存在
+  
+  /cart/total/:
+    get:
+      tags:
+        - 购物车
+      summary: 获取购物车总金额
+      description: 计算购物车中所有商品的总金额
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total:
+                    type: number
+                      format: decimal
+        '401':
+          description: 未认证
+  
+  /wishlist/:
+    get:
+      tags:
+        - 愿望清单
+      summary: 获取愿望清单
+      description: 获取当前用户的愿望清单
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+        '401':
+          description: 未认证
+  
+  /wishlist/add_to_wishlist/:
+    post:
+      tags:
+        - 愿望清单
+      summary: 添加到愿望清单
+      description: 将商品添加到愿望清单
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - product_id
+              properties:
+                product_id:
+                  type: integer
+                  description: 商品ID
+      responses:
+        '200':
+          description: 添加成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartItem'
+        '400':
+          description: 请求参数错误
+        '401':
+          description: 未认证
+  
+  /orders/:
+    get:
+      tags:
+        - 订单管理
+      summary: 获取订单列表
+      description: 获取当前用户的订单列表
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+        '401':
+          description: 未认证
+    
+    post:
+      tags:
+        - 订单管理
+      summary: 创建订单
+      description: 创建新订单
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - shipping_address
+                - contact_phone
+                - contact_name
+                - items
+              properties:
+                shipping_address:
+                  type: object
+                  description: 收货地址
+                contact_phone:
+                  type: string
+                  description: 联系电话
+                contact_name:
+                  type: string
+                  description: 联系人
+                notes:
+                  type: string
+                  description: 订单备注
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - product_id
+                      - quantity
+                    properties:
+                      product_id:
+                        type: integer
+                        description: 商品ID
+                      quantity:
+                        type: integer
+                        minimum: 1
+                        description: 数量
+      responses:
+        '201':
+          description: 订单创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '400':
+          description: 请求参数错误
+        '401':
+          description: 未认证
+  
+  /news/:
+    get:
+      tags:
+        - 内容管理
+      summary: 获取新闻列表
+      description: 获取新闻列表，支持分页、搜索、过滤
+      parameters:
+        - name: search
+          in: query
+          description: 搜索关键词
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: 新闻类型
+          schema:
+            type: string
+            enum: [art_news, exhibition, culture, industry]
+        - name: ordering
+          in: query
+          description: 排序方式
+          schema:
+            type: string
+            enum: [published_at, -published_at, views_count, -views_count, created_at, -created_at]
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/News'
+  
+  /news/featured/:
+    get:
+      tags:
+        - 内容管理
+      summary: 获取推荐新闻
+      description: 获取推荐新闻列表
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/News'
+  
+  /articles/:
+    get:
+      tags:
+        - 内容管理
+      summary: 获取文章列表
+      description: 获取文章列表，支持分页、搜索、过滤
+      parameters:
+        - name: search
+          in: query
+          description: 搜索关键词
+          schema:
+            type: string
+        - name: ordering
+          in: query
+          description: 排序方式
+          schema:
+            type: string
+            enum: [created_at, -created_at, views_count, -views_count, likes_count, -likes_count]
+        - name: page
+          in: query
+          description: 页码
+          schema:
+            type: integer
+            default: 1
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                  next:
+                    type: string
+                    nullable: true
+                  previous:
+                    type: string
+                    nullable: true
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Article'
+    
+    post:
+      tags:
+        - 内容管理
+      summary: 创建文章
+      description: 创建新文章
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - title
+                - content
+              properties:
+                title:
+                  type: string
+                  maxLength: 20
+                  description: 文章标题
+                content:
+                  type: string
+                  maxLength: 1200
+                  description: 文章内容
+                cover_image:
+                  type: string
+                  format: uri
+                  description: 封面图片URL
+      responses:
+        '201':
+          description: 文章创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Article'
+        '400':
+          description: 请求参数错误
+        '401':
+          description: 未认证
+  
+  /articles/featured/:
+    get:
+      tags:
+        - 内容管理
+      summary: 获取推荐文章
+      description: 获取推荐文章列表
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+  
+  /articles/my_articles/:
+    get:
+      tags:
+        - 内容管理
+      summary: 获取我的文章
+      description: 获取当前用户创建的文章
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Article'
+        '401':
+          description: 未认证
+  
+  /banners/:
+    get:
+      tags:
+        - 内容管理
+      summary: 获取轮播图
+      description: 获取所有轮播图
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    subtitle:
+                      type: string
+                    image:
+                      type: string
+                      format: uri
+                    banner_type:
+                      type: string
+                      enum: [artist, topic, activity, advertisement]
+                    link_url:
+                      type: string
+                      format: uri
+                    sort_order:
+                      type: integer
+  
+  /banners/active/:
+    get:
+      tags:
+        - 内容管理
+      summary: 获取活跃轮播图
+      description: 获取当前时间范围内活跃的轮播图
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    subtitle:
+                      type: string
+                    image:
+                      type: string
+                      format: uri
+                    banner_type:
+                      type: string
+                    link_url:
+                      type: string
+                      format: uri
+                    sort_order:
+                      type: integer
+  
+  /customization-requests/:
+    get:
+      tags:
+        - 定制服务
+      summary: 获取定制请求列表
+      description: 获取定制请求列表
+      security:
+        - sessionAuth: []
+      responses:
+        '200':
+          description: 成功
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    title:
+                      type: string
+                    request_type:
+                      type: string
+                      enum: [personal, commercial]
+                    customization_type:
+                      type: string
+                      enum: [painting, sculpture, toy, accessory, handicraft, heritage]
+                    description:
+                      type: string
+                    status:
+                      type: string
+                      enum: [pending, in_progress, completed, cancelled]
+                    created_at:
+                      type: string
+                      format: date-time
+        '401':
+          description: 未认证
+    
+    post:
+      tags:
+        - 定制服务
+      summary: 创建定制请求
+      description: 创建新的定制请求
+      security:
+        - sessionAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - request_type
+                - customization_type
+                - title
+                - description
+              properties:
+                request_type:
+                  type: string
+                  enum: [personal, commercial]
+                  description: 请求类型
+                customization_type:
+                  type: string
+                  enum: [painting, sculpture, toy, accessory, handicraft, heritage]
+                  description: 定制类型
+                title:
+                  type: string
+                  description: 定制标题
+                description:
+                  type: string
+                  description: 定制描述
+                reference_images:
+                  type: array
+                  items:
+                    type: string
+                  description: 参考图片URL列表
+                budget_range:
+                  type: string
+                  description: 预算范围
+                duration_type:
+                  type: string
+                  enum: [short, long, multiple]
+                  description: 定制时间类型
+                expected_delivery:
+                  type: string
+                  format: date
+                  description: 预期交付日期
+                artist:
+                  type: integer
+                  description: 指定艺术家ID
+                notes:
+                  type: string
+                  description: 备注
+      responses:
+        '201':
+          description: 定制请求创建成功
+        '400':
+          description: 请求参数错误
+        '401':
+          description: 未认证
+  
+  /commercial-cooperations/:
+    post:
+      tags:
+        - 定制服务
+      summary: 提交商业合作申请
+      description: 提交商业合作申请
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - company_name
+                - contact_person
+                - contact_phone
+                - contact_email
+                - cooperation_type
+                - project_description
+              properties:
+                company_name:
+                  type: string
+                  description: 公司名称
+                contact_person:
+                  type: string
+                  description: 联系人
+                contact_phone:
+                  type: string
+                  description: 联系电话
+                contact_email:
+                  type: string
+                  format: email
+                  description: 联系邮箱
+                cooperation_type:
+                  type: string
+                  enum: [institutional, heritage, creative, design, other]
+                  description: 合作类型
+                project_description:
+                  type: string
+                  description: 项目描述
+                budget_range:
+                  type: string
+                  description: 预算范围
+                expected_timeline:
+                  type: string
+                  description: 预期时间线
+      responses:
+        '201':
+          description: 商业合作申请提交成功
+        '400':
+          description: 请求参数错误
+
+tags:
+  - name: 用户管理
+    description: 用户注册、登录、档案管理等
+  - name: 商品分类
+    description: 商品分类管理
+  - name: 商品管理
+    description: 商品信息管理
+  - name: 购物车
+    description: 购物车管理
+  - name: 愿望清单
+    description: 愿望清单管理
+  - name: 订单管理
+    description: 订单创建、查询等
+  - name: 内容管理
+    description: 新闻、文章、轮播图等
+  - name: 定制服务
+    description: 定制请求、商业合作等 

@@ -1,0 +1,38 @@
+# Django 核心框架
+Django==5.2.5
+
+# Django REST Framework
+djangorestframework==3.16.1
+
+# 数据库驱动
+PyMySQL==1.1.0
+
+# 图片处理
+Pillow==10.1.0
+
+# 跨域支持
+django-cors-headers==4.3.1
+
+# 过滤和搜索
+django-filter==23.5
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# 开发工具
+django-debug-toolbar==4.2.0
+
+# 代码质量
+flake8==6.1.0
+black==23.11.0
+
+# 测试工具
+pytest==7.4.3
+pytest-django==4.7.0
+
+# 生产环境
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# 其他工具
+requests==2.31.0 
