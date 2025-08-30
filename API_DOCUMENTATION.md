@@ -191,9 +191,7 @@ Authorization: Token <your_token>
 
 **描述**: 获取所有商品分类
 
-**响应格式**: 数组格式，包含所有分类及其子分类
-
-**响应示例**:
+**响应**:
 ```json
 [
     {
@@ -202,7 +200,7 @@ Authorization: Token <your_token>
         "parent": null,
         "description": "各种绘画作品",
         "image": null,
-        "sort_order": 1,
+        "sort_order": 0,
         "is_active": true,
         "children": [
             {
@@ -210,87 +208,16 @@ Authorization: Token <your_token>
                 "name": "油画",
                 "parent": 1,
                 "description": "油画作品",
-                "image": null,
-                "sort_order": 1,
-                "is_active": true,
-                "children": []
-            },
-            {
-                "id": 3,
-                "name": "水彩",
-                "parent": 1,
-                "description": "水彩画作品",
-                "image": null,
-                "sort_order": 2,
-                "is_active": true,
-                "children": []
-            }
-        ]
-    },
-    {
-        "id": 10,
-        "name": "立体艺术/雕刻",
-        "parent": null,
-        "description": "立体艺术作品和雕刻品",
-        "image": null,
-        "sort_order": 2,
-        "is_active": true,
-        "children": [
-            {
-                "id": 11,
-                "name": "木雕",
-                "parent": 10,
-                "description": "木雕作品",
-                "image": null,
-                "sort_order": 1,
-                "is_active": true,
                 "children": []
             }
         ]
     }
 ]
 ```
-
-**分类结构说明**:
-- **绘画**: 油画、水彩、素描、丙烯、版画、插画、漫画、数字绘画
-- **立体艺术/雕刻**: 木雕、石雕、泥塑、陶瓷、艺术装置、3D打印
-- **潮玩**: 盲盒、手办、拼装模型、涂鸦、二次元
-- **周边**: 动漫周边、影视周边、游戏周边、小说周边、明星周边、艺术周边、海报、贴纸/卡片、徽章、装饰画、模型、服饰、文具、玩具、数字艺术
-- **手工艺**: 刺绣、印染、布艺、首饰、挂件、编织
-- **非遗艺术**: 民族工艺
 
 **接口**: `GET /api/categories/root_categories/`
 
-**描述**: 获取根分类（无父分类的主分类）
-
-**响应格式**: 数组格式，只包含主分类及其子分类
-
-**响应示例**:
-```json
-[
-    {
-        "id": 1,
-        "name": "绘画",
-        "parent": null,
-        "description": "各种绘画作品",
-        "image": null,
-        "sort_order": 1,
-        "is_active": true,
-        "children": [
-            {
-                "id": 2,
-                "name": "油画",
-                "parent": 1,
-                "description": "油画作品",
-                "image": null,
-                "sort_order": 1,
-                "is_active": true,
-                "children": []
-            }
-        ]
-    }
-]
-```
+**描述**: 获取根分类
 
 ### 2.2 商品列表
 
@@ -855,48 +782,7 @@ print("商品列表:", response.json())
 3. 图片压缩和CDN
 4. API 限流
 
-## 13. Token 认证使用指南
-
-### 13.1 完整认证流程
-
-1. **用户登录获取 Token**
-   ```bash
-   curl -X POST "http://localhost:8000/api/users/login/" \
-     -H "Content-Type: application/json" \
-     -d '{"username":"admin","password":"admin"}'
-   ```
-
-2. **使用 Token 调用需要认证的接口**
-   ```bash
-   curl -X GET "http://localhost:8000/api/users/profile/" \
-     -H "Authorization: Token YOUR_TOKEN_HERE"
-   ```
-
-3. **用户退出登录**
-   ```bash
-   curl -X POST "http://localhost:8000/api/users/logout/" \
-     -H "Authorization: Token YOUR_TOKEN_HERE"
-   ```
-
-### 13.2 Token 安全建议
-
-- **存储安全**: 不要在客户端代码中硬编码 token
-- **传输安全**: 始终使用 HTTPS 传输 token
-- **过期管理**: 定期更换 token，特别是在生产环境中
-- **权限控制**: 不同用户角色的 token 具有不同的权限
-
-### 13.3 常见问题
-
-**Q: Token 过期了怎么办？**
-A: 重新调用登录接口获取新的 token
-
-**Q: 可以同时使用多个 token 吗？**
-A: 可以，每个 token 都是独立的认证凭证
-
-**Q: Token 被盗用了怎么办？**
-A: 立即联系管理员重置 token，或重新登录获取新 token
-
-## 14. 更新日志
+## 13. 更新日志
 
 - **v1.0.0** (2024-01-01): 初始版本，包含基础功能
 - **v1.1.0** (计划): 添加支付集成
