@@ -28,15 +28,29 @@ class CustomUserAdmin(UserAdmin):
 
 @admin.register(ArtistProfile)
 class ArtistProfileAdmin(admin.ModelAdmin):
-    list_display = ('artist_name', 'user', 'is_approved', 'followers_count', 'works_count')
-    list_filter = ('is_approved',)
-    search_fields = ('artist_name', 'user__username', 'bio')
+    list_display = ('artist_name', 'user', 'is_approved', 'submitted_at', 'reviewed_at', 'followers_count', 'works_count')
+    list_filter = ('is_approved', 'submitted_at', 'reviewed_at')
+    search_fields = ('artist_name', 'user__username', 'bio', 'education_background', 'professional_experience')
+    readonly_fields = ('submitted_at', 'reviewed_at', 'followers_count', 'works_count')
     
     fieldsets = (
         ('基本信息', {'fields': ('user', 'artist_name', 'bio', 'tags')}),
-        ('审核状态', {'fields': ('is_approved', 'approval_date')}),
+        ('资质材料', {'fields': ('education_background', 'professional_experience', 'awards_honors', 'exhibition_history')}),
+        ('文件材料', {'fields': ('identity_document', 'art_qualification', 'portfolio_document', 'portfolio_images', 'other_documents')}),
+        ('审核状态', {'fields': ('is_approved', 'approval_date', 'review_notes', 'rejection_reason', 'submitted_at', 'reviewed_at')}),
         ('统计数据', {'fields': ('followers_count', 'works_count')}),
     )
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('user')
+    
+    def save_model(self, request, obj, form, change):
+        if change and 'is_approved' in form.changed_data:
+            from django.utils import timezone
+            if obj.is_approved and not obj.reviewed_at:
+                obj.reviewed_at = timezone.now()
+                obj.approval_date = timezone.now()
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(MerchantProfile)

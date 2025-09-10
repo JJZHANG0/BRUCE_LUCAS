@@ -67,4 +67,28 @@ class ProductListSerializer(serializers.ModelSerializer):
         primary_image = obj.images.filter(is_primary=True).first()
         if primary_image:
             return ProductImageSerializer(primary_image).data
-        return None 
+        return None
+
+
+class ProductCreateSerializer(serializers.ModelSerializer):
+    """作品创建序列化器"""
+    materials = serializers.ListField(child=serializers.CharField(), required=False)
+    techniques = serializers.ListField(child=serializers.CharField(), required=False)
+    
+    class Meta:
+        model = Product
+        fields = [
+            'title', 'description', 'category', 'price', 'original_price',
+            'size', 'weight', 'materials', 'techniques', 'year_created',
+            'is_original', 'is_limited', 'limited_quantity', 'status'
+        ]
+    
+    def validate_price(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("价格必须大于0")
+        return value
+    
+    def validate_original_price(self, value):
+        if value is not None and value <= 0:
+            raise serializers.ValidationError("原价必须大于0")
+        return value 

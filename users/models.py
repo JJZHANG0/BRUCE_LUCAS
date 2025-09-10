@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -42,6 +43,23 @@ class ArtistProfile(models.Model):
     approval_date = models.DateTimeField(null=True, blank=True, verbose_name='审核通过时间')
     followers_count = models.PositiveIntegerField(default=0, verbose_name='粉丝数')
     works_count = models.PositiveIntegerField(default=0, verbose_name='作品数')
+    
+    # 资质材料字段
+    portfolio_images = models.JSONField(default=list, verbose_name='作品集图片')
+    education_background = models.TextField(blank=True, verbose_name='教育背景')
+    professional_experience = models.TextField(blank=True, verbose_name='专业经历')
+    awards_honors = models.TextField(blank=True, verbose_name='获奖荣誉')
+    exhibition_history = models.TextField(blank=True, verbose_name='展览经历')
+    identity_document = models.FileField(upload_to='artist_documents/', blank=True, verbose_name='身份证明')
+    art_qualification = models.FileField(upload_to='artist_documents/', blank=True, verbose_name='艺术资质证明')
+    portfolio_document = models.FileField(upload_to='artist_documents/', blank=True, verbose_name='作品集文档')
+    other_documents = models.JSONField(default=list, verbose_name='其他证明材料')
+    
+    # 审核相关字段
+    review_notes = models.TextField(blank=True, verbose_name='审核备注')
+    rejection_reason = models.TextField(blank=True, verbose_name='拒绝原因')
+    submitted_at = models.DateTimeField(auto_now_add=True, verbose_name='提交时间')
+    reviewed_at = models.DateTimeField(null=True, blank=True, verbose_name='审核时间')
     
     class Meta:
         verbose_name = '艺术家档案'

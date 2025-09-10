@@ -149,7 +149,122 @@ Authorization: Token <your_token>
 }
 ```
 
-### 1.5 艺术家档案管理
+### 1.5 修改用户信息
+
+**接口**: `PUT /api/users/update_profile/`
+
+**描述**: 修改当前登录用户信息
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**请求体**:
+```json
+{
+    "first_name": "张",
+    "last_name": "三",
+    "phone": "13800138000",
+    "wechat": "zhangsan123",
+    "avatar": "头像文件"
+}
+```
+
+**响应**:
+```json
+{
+    "message": "用户信息更新成功",
+    "user": {
+        "id": 1,
+        "username": "testuser",
+        "email": "test@example.com",
+        "first_name": "张",
+        "last_name": "三",
+        "user_type": "buyer",
+        "phone": "13800138000",
+        "wechat": "zhangsan123",
+        "avatar": "/media/avatars/avatar.jpg",
+        "is_verified": false,
+        "created_at": "2024-01-01T00:00:00Z"
+    }
+}
+```
+
+### 1.6 艺术家注册（需要资质审核）
+
+**接口**: `POST /api/users/register_artist/`
+
+**描述**: 艺术家注册，需要提交资质材料进行后台审核
+
+**请求体** (multipart/form-data):
+```
+username: artist1
+email: artist1@example.com
+password: password123
+first_name: 李
+last_name: 四
+phone: 13900139000
+artist_name: 李四艺术家
+bio: 专业油画艺术家，擅长风景画
+tags: ["油画", "风景", "写实"]
+
+# 资质材料（必填）
+education_background: 中央美术学院油画系本科毕业
+professional_experience: 从事油画创作10年，曾在多家画廊举办个展
+awards_honors: 2019年获得全国油画大赛金奖
+exhibition_history: 2020年北京798艺术区个展，2021年上海美术馆联展
+
+# 文件上传（必填）
+identity_document: 身份证扫描件
+art_qualification: 艺术资质证明文件
+portfolio_document: 作品集PDF文档
+portfolio_images: [作品图片1, 作品图片2, 作品图片3, ...]
+other_documents: [其他证明材料1, 其他证明材料2, ...]
+```
+
+**响应**:
+```json
+{
+    "message": "艺术家注册申请已提交，等待审核",
+    "user": {
+        "id": 2,
+        "username": "artist1",
+        "email": "artist1@example.com",
+        "first_name": "李",
+        "last_name": "四",
+        "user_type": "artist",
+        "phone": "13900139000",
+        "is_verified": false,
+        "created_at": "2024-01-01T00:00:00Z"
+    },
+    "artist_profile": {
+        "id": 1,
+        "artist_name": "李四艺术家",
+        "bio": "专业油画艺术家，擅长风景画",
+        "tags": ["油画", "风景", "写实"],
+        "education_background": "中央美术学院油画系本科毕业",
+        "professional_experience": "从事油画创作10年，曾在多家画廊举办个展",
+        "awards_honors": "2019年获得全国油画大赛金奖",
+        "exhibition_history": "2020年北京798艺术区个展，2021年上海美术馆联展",
+        "portfolio_images": ["/media/artist_documents/portfolio/work1.jpg"],
+        "other_documents": ["/media/artist_documents/other/cert1.pdf"],
+        "is_approved": false,
+        "followers_count": 0,
+        "works_count": 0,
+        "submitted_at": "2024-01-01T00:00:00Z"
+    },
+    "review_status": "pending"
+}
+```
+
+**重要说明**:
+- 艺术家注册需要提交完整的资质材料
+- 注册后状态为 `pending`，需要后台管理员审核
+- 只有通过审核的艺术家才能上传作品和享受艺术家功能
+- 审核通过后，`is_approved` 字段会变为 `true`
+
+### 1.7 艺术家档案管理
 
 **接口**: `GET /api/artist-profiles/`
 
@@ -182,6 +297,148 @@ Authorization: Token <your_token>
 **接口**: `GET /api/artist-profiles/approved/`
 
 **描述**: 获取已审核通过的艺术家
+
+**接口**: `POST /api/artist-profiles/create_profile/`
+
+**描述**: 艺术家创建自己的信息
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**请求体**:
+```json
+{
+    "artist_name": "王五艺术家",
+    "bio": "专业水彩画艺术家，擅长人物画",
+    "tags": ["水彩", "人物", "写实"]
+}
+```
+
+**响应**:
+```json
+{
+    "message": "艺术家档案创建成功",
+    "profile": {
+        "id": 2,
+        "artist_name": "王五艺术家",
+        "bio": "专业水彩画艺术家，擅长人物画",
+        "tags": ["水彩", "人物", "写实"],
+        "is_approved": false,
+        "followers_count": 0,
+        "works_count": 0
+    }
+}
+```
+
+**接口**: `PUT /api/artist-profiles/update_profile/`
+
+**描述**: 艺术家更新自己的信息
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**请求体**:
+```json
+{
+    "artist_name": "王五艺术家（更新）",
+    "bio": "专业水彩画艺术家，擅长人物画和风景画",
+    "tags": ["水彩", "人物", "风景", "写实"]
+}
+```
+
+### 1.8 艺术家审核管理（管理员）
+
+**接口**: `GET /api/artist-profiles/pending_artists/`
+
+**描述**: 获取待审核的艺术家列表（仅管理员）
+
+**认证**: 需要在请求头中提供有效的管理员 token
+```
+Authorization: Token <admin_token>
+```
+
+**响应**:
+```json
+[
+    {
+        "id": 1,
+        "user": {
+            "id": 2,
+            "username": "artist1",
+            "email": "artist1@example.com"
+        },
+        "artist_name": "李四艺术家",
+        "bio": "专业油画艺术家，擅长风景画",
+        "education_background": "中央美术学院油画系本科毕业",
+        "professional_experience": "从事油画创作10年",
+        "awards_honors": "2019年获得全国油画大赛金奖",
+        "exhibition_history": "2020年北京798艺术区个展",
+        "portfolio_images": ["/media/artist_documents/portfolio/work1.jpg"],
+        "is_approved": false,
+        "submitted_at": "2024-01-01T00:00:00Z"
+    }
+]
+```
+
+**接口**: `POST /api/artist-profiles/{id}/review_artist/`
+
+**描述**: 审核艺术家申请（仅管理员）
+
+**认证**: 需要在请求头中提供有效的管理员 token
+```
+Authorization: Token <admin_token>
+```
+
+**请求体** (通过审核):
+```json
+{
+    "action": "approve",
+    "review_notes": "资质材料齐全，作品质量优秀，同意通过审核"
+}
+```
+
+**请求体** (拒绝申请):
+```json
+{
+    "action": "reject",
+    "rejection_reason": "作品集质量不符合要求，请重新提交",
+    "review_notes": "建议提供更多高质量作品"
+}
+```
+
+**响应** (通过审核):
+```json
+{
+    "message": "艺术家申请已通过",
+    "artist_profile": {
+        "id": 1,
+        "artist_name": "李四艺术家",
+        "is_approved": true,
+        "approval_date": "2024-01-01T12:00:00Z",
+        "review_notes": "资质材料齐全，作品质量优秀，同意通过审核",
+        "reviewed_at": "2024-01-01T12:00:00Z"
+    }
+}
+```
+
+**响应** (拒绝申请):
+```json
+{
+    "message": "艺术家申请已拒绝",
+    "artist_profile": {
+        "id": 1,
+        "artist_name": "李四艺术家",
+        "is_approved": false,
+        "rejection_reason": "作品集质量不符合要求，请重新提交",
+        "review_notes": "建议提供更多高质量作品",
+        "reviewed_at": "2024-01-01T12:00:00Z"
+    }
+}
+```
 
 ## 2. 商品管理 API
 
@@ -335,6 +592,85 @@ Authorization: Token <your_token>
 
 **描述**: 增加商品点赞数
 
+### 2.8 作品上传
+
+**接口**: `POST /api/products/upload_work/`
+
+**描述**: 艺术家上传作品
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**请求体** (multipart/form-data):
+```
+title: 山水画
+description: 精美的山水画作品
+category: 2
+price: 1000.00
+original_price: 1200.00
+size: 60x80cm
+weight: 2.5
+materials: ["油画布", "油画颜料"]
+techniques: ["写实"]
+year_created: 2023
+is_original: true
+is_limited: false
+images: [图片文件1, 图片文件2, ...]
+image_alt_0: 主图描述
+image_alt_1: 第二张图片描述
+tags: ["风景", "山水", "油画"]
+```
+
+**响应**:
+```json
+{
+    "message": "作品上传成功",
+    "product": {
+        "id": 1,
+        "title": "山水画",
+        "description": "精美的山水画作品",
+        "artist": {
+            "id": 1,
+            "artist_name": "张三艺术家"
+        },
+        "category": {
+            "id": 2,
+            "name": "油画"
+        },
+        "price": "1000.00",
+        "original_price": "1200.00",
+        "size": "60x80cm",
+        "weight": "2.5",
+        "materials": ["油画布", "油画颜料"],
+        "techniques": ["写实"],
+        "year_created": 2023,
+        "is_original": true,
+        "is_limited": false,
+        "status": "draft",
+        "views_count": 0,
+        "likes_count": 0,
+        "images": [
+            {
+                "id": 1,
+                "image": "/media/products/landscape.jpg",
+                "alt_text": "主图描述",
+                "is_primary": true,
+                "sort_order": 0
+            }
+        ],
+        "tags": [
+            {
+                "id": 1,
+                "name": "风景",
+                "color": "#007bff"
+            }
+        ]
+    }
+}
+```
+
 ## 3. 购物车和订单 API
 
 ### 3.1 购物车管理
@@ -436,6 +772,77 @@ Authorization: Token <your_token>
 **接口**: `GET /api/orders/by_status/?status=pending_payment`
 
 **描述**: 按状态获取订单
+
+### 3.4 订单支付
+
+**接口**: `POST /api/payments/process_payment/`
+
+**描述**: 订单支付接口
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**请求体**:
+```json
+{
+    "order_id": 1,
+    "payment_method": "alipay"
+}
+```
+
+**响应**:
+```json
+{
+    "message": "支付成功",
+    "payment": {
+        "id": 1,
+        "order": 1,
+        "payment_method": "alipay",
+        "amount": "1000.00",
+        "transaction_id": "TXN00000001",
+        "status": "success",
+        "payment_time": "2024-01-01T12:00:00Z",
+        "created_at": "2024-01-01T12:00:00Z"
+    },
+    "order": {
+        "id": 1,
+        "order_number": "BL12345678",
+        "status": "paid",
+        "total_amount": "1000.00",
+        "final_amount": "1000.00",
+        "payment_time": "2024-01-01T12:00:00Z",
+        "payment_method": "alipay"
+    }
+}
+```
+
+**接口**: `POST /api/payments/{id}/refund/`
+
+**描述**: 退款接口
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**响应**:
+```json
+{
+    "message": "退款成功",
+    "refund_payment": {
+        "id": 2,
+        "order": 1,
+        "payment_method": "alipay",
+        "amount": "-1000.00",
+        "transaction_id": "REF00000001",
+        "status": "success",
+        "payment_time": "2024-01-01T13:00:00Z",
+        "created_at": "2024-01-01T13:00:00Z"
+    }
+}
+```
 
 ## 4. 内容管理 API
 
@@ -595,6 +1002,78 @@ Authorization: Token <your_token>
 }
 ```
 
+### 6.3 个性化定制提交
+
+**接口**: `POST /api/customization-requests/submit_customization/`
+
+**描述**: 提交个性化定制请求
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**请求体** (multipart/form-data):
+```
+request_type: personal
+customization_type: painting
+title: 定制油画
+description: 想要一幅山水画
+budget_range: 1000-2000
+duration_type: short
+expected_delivery: 2024-02-01
+reference_images: [参考图片1, 参考图片2, ...]
+```
+
+**响应**:
+```json
+{
+    "message": "定制请求提交成功",
+    "request": {
+        "id": 1,
+        "user": 1,
+        "request_type": "personal",
+        "customization_type": "painting",
+        "title": "定制油画",
+        "description": "想要一幅山水画",
+        "reference_images": ["/media/customization/ref1.jpg"],
+        "budget_range": "1000-2000",
+        "duration_type": "short",
+        "expected_delivery": "2024-02-01",
+        "status": "pending",
+        "created_at": "2024-01-01T00:00:00Z"
+    }
+}
+```
+
+**接口**: `POST /api/customization-requests/{id}/update_status/`
+
+**描述**: 更新定制请求状态
+
+**认证**: 需要在请求头中提供有效的 token
+```
+Authorization: Token <your_token>
+```
+
+**请求体**:
+```json
+{
+    "status": "accepted"
+}
+```
+
+**响应**:
+```json
+{
+    "message": "状态更新成功",
+    "request": {
+        "id": 1,
+        "status": "accepted",
+        "updated_at": "2024-01-01T12:00:00Z"
+    }
+}
+```
+
 ## 7. 测试示例
 
 ### 7.1 使用 curl 测试
@@ -632,9 +1111,91 @@ curl -X GET "http://localhost:8000/api/users/profile/" \
   -H "Authorization: Token YOUR_TOKEN_HERE"
 ```
 
+#### 修改用户信息
+```bash
+curl -X PUT "http://localhost:8000/api/users/update_profile/" \
+  -H "Authorization: Token YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "first_name": "张",
+    "last_name": "三",
+    "phone": "13800138000",
+    "wechat": "zhangsan123"
+  }'
+```
+
+#### 艺术家注册（带资质材料）
+```bash
+curl -X POST http://localhost:8000/api/users/register_artist/ \
+  -F "username=artist1" \
+  -F "email=artist1@example.com" \
+  -F "password=password123" \
+  -F "first_name=李" \
+  -F "last_name=四" \
+  -F "phone=13900139000" \
+  -F "artist_name=李四艺术家" \
+  -F "bio=专业油画艺术家，擅长风景画" \
+  -F "tags=[\"油画\", \"风景\", \"写实\"]" \
+  -F "education_background=中央美术学院油画系本科毕业" \
+  -F "professional_experience=从事油画创作10年，曾在多家画廊举办个展" \
+  -F "awards_honors=2019年获得全国油画大赛金奖" \
+  -F "exhibition_history=2020年北京798艺术区个展，2021年上海美术馆联展" \
+  -F "identity_document=@id_card.jpg" \
+  -F "art_qualification=@qualification.pdf" \
+  -F "portfolio_document=@portfolio.pdf" \
+  -F "portfolio_images=@work1.jpg" \
+  -F "portfolio_images=@work2.jpg" \
+  -F "other_documents=@cert1.pdf"
+```
+
+#### 管理员审核艺术家申请
+```bash
+# 获取待审核的艺术家列表
+curl -X GET "http://localhost:8000/api/artist-profiles/pending_artists/" \
+  -H "Authorization: Token ADMIN_TOKEN_HERE"
+
+# 通过审核
+curl -X POST "http://localhost:8000/api/artist-profiles/1/review_artist/" \
+  -H "Authorization: Token ADMIN_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "approve",
+    "review_notes": "资质材料齐全，作品质量优秀，同意通过审核"
+  }'
+
+# 拒绝申请
+curl -X POST "http://localhost:8000/api/artist-profiles/1/review_artist/" \
+  -H "Authorization: Token ADMIN_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "action": "reject",
+    "rejection_reason": "作品集质量不符合要求，请重新提交",
+    "review_notes": "建议提供更多高质量作品"
+  }'
+```
+
 #### 获取商品列表
 ```bash
 curl -X GET "http://localhost:8000/api/products/?search=山水&ordering=-created_at"
+```
+
+#### 作品上传
+```bash
+curl -X POST http://localhost:8000/api/products/upload_work/ \
+  -H "Authorization: Token YOUR_TOKEN_HERE" \
+  -F "title=山水画" \
+  -F "description=精美的山水画作品" \
+  -F "category=2" \
+  -F "price=1000.00" \
+  -F "original_price=1200.00" \
+  -F "size=60x80cm" \
+  -F "materials=[\"油画布\", \"油画颜料\"]" \
+  -F "techniques=[\"写实\"]" \
+  -F "year_created=2023" \
+  -F "is_original=true" \
+  -F "images=@image1.jpg" \
+  -F "images=@image2.jpg" \
+  -F "tags=[\"风景\", \"山水\", \"油画\"]"
 ```
 
 #### 添加到购物车
@@ -645,6 +1206,31 @@ curl -X POST http://localhost:8000/api/cart/add_to_cart/ \
     "product_id": 1,
     "quantity": 1
   }'
+```
+
+#### 订单支付
+```bash
+curl -X POST http://localhost:8000/api/payments/process_payment/ \
+  -H "Authorization: Token YOUR_TOKEN_HERE" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order_id": 1,
+    "payment_method": "alipay"
+  }'
+```
+
+#### 个性化定制提交
+```bash
+curl -X POST http://localhost:8000/api/customization-requests/submit_customization/ \
+  -H "Authorization: Token YOUR_TOKEN_HERE" \
+  -F "request_type=personal" \
+  -F "customization_type=painting" \
+  -F "title=定制油画" \
+  -F "description=想要一幅山水画" \
+  -F "budget_range=1000-2000" \
+  -F "duration_type=short" \
+  -F "expected_delivery=2024-02-01" \
+  -F "reference_images=@reference1.jpg"
 ```
 
 ### 7.2 使用 Python requests 测试
@@ -785,7 +1371,7 @@ print("商品列表:", response.json())
 ## 13. 更新日志
 
 - **v1.0.0** (2024-01-01): 初始版本，包含基础功能
-- **v1.1.0** (计划): 添加支付集成
+- **v1.1.0** (计划): 添加   集成
 - **v1.2.0** (计划): 添加消息系统
 
 ---
